@@ -1,6 +1,7 @@
 """A LangChain compatible VectorStore wrapper for TinyVec"""
 from typing import Iterable, List, Optional, Any, Type, Tuple, Callable, Dict, TypeVar
 from abc import abstractmethod
+from time import time
 
 from langchain_core.vectorstores import VectorStore, VectorStoreRetriever
 from langchain_core.runnables.config import run_in_executor
@@ -51,7 +52,9 @@ class LangchainVectorDB(VectorStore):
     ) -> List[Document]:
         """Return docs most similar to query."""
         vector = self.embedder.embed_query(query)
-        self.vdb.get_k_similar_vecs(vector, k, "euclid", "brute_force")
+        _, inds = self.vdb.get_k_similar_vecs(vector, k, "euclidean_dist_square", "brute_force")
+        return [self.texts[i] for i in inds]
+
 
     def _select_relevance_score_fn(self) -> Callable[[float], float]:
         """
@@ -149,6 +152,7 @@ class LangchainVectorDB(VectorStore):
         """Return docs selected using the maximal marginal relevance."""
         raise NotImplementedError
 
+
     @classmethod
     def from_texts(
         cls: 'LangchainVectorDB',
@@ -164,8 +168,13 @@ class LangchainVectorDB(VectorStore):
         print(f"Allocating {len(texts)} size database")
         vdb = VectorDB(search_dim=emb_dim, preallocate=len(texts))
         if individually:
+            inds = []
             print("Embedding individual queries")
-            inds = [vdb.add(embedding.embed_query(text)) for text in texts]
+            for query in texts:
+                s = time()
+                embds = embedding.embed_query(query)
+                print(f"Time to embed {time() - s}")
+                inds.append(vdb.add(embds))
         else:
             print("Embedding all docs at once")
             embds = embedding.embed_documents(texts)
