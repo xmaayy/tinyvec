@@ -2,9 +2,6 @@
 
 [![logo](https://raw.githubusercontent.com/xmaayy/tinyvec/master/static/logo.png)](https://github.com/xmaayy/tinyvec)
 tinyvec | A toy implementation with aspirations of being useful
-<h3>
-[Homepage](https://github.com/xmaayy/tinyvec)
-</h3>
 
 </div>
 

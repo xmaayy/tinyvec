@@ -12,6 +12,7 @@ class LocalizationMixin:
     def brute_force(vector: VecLike, vec_arr: np.ndarray):
         """
         Brute force means we dont want to localize so we just return
-        all of the vectors for searching, not ideal for most cases
+        all of the vectors for searching, not ideal for most cases but
+        since we dont have to 
         """
         return vec_arr
