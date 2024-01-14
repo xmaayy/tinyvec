@@ -155,13 +155,19 @@ class LangchainVectorDB(VectorStore):
         texts: List[str],
         embedding: Embeddings,
         metadatas: Optional[List[dict]] = None,
+        emb_dim: int = None,
+        individually: bool = False,
         **kwargs: Any,
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
         lcvdb = LangchainVectorDB()
-        vdb = VectorDB(search_dim=kwargs.get("emb_dim"), preallocate=len(texts))
-        embds = embedding.embed_documents(texts)
-        inds = lcvdb.add_many(embds)
+        vdb = VectorDB(search_dim=emb_dim, preallocate=len(texts))
+        if individually:
+            embds = embedding.embed_query(texts)
+            inds = vdb.add(embds)
+        else:
+            embds = embedding.embed_documents(texts)
+            inds = vdb.add_many(embds)
         lcvdb.vdb = vdb
         lcvdb.embedder = embedding
         lcvdb.texts = dict(zip(inds, texts))
