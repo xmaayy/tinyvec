@@ -14,7 +14,7 @@ authors = [
 ]
 description = "A learning experience in vector databases"
 readme = "README.md"
-license = "MIT"
+license = {text = "MIT License"}
 keywords = ["vector", "database", "embedding", "locality hashing"]
 classifiers = [
   "Development Status :: 3 - Alpha",
