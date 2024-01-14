@@ -6,9 +6,9 @@ from tinyvec import VectorDB
 from sift_reader import ivecs_read, fvecs_read
 
 if __name__ == "__main__":
-    base_vecs = fvecs_read(Path(__file__).parent / "data/sift_base.fvecs")
-    query_vecs = fvecs_read(Path(__file__).parent / "data/sift_query.fvecs")
-    gt_vecs = ivecs_read(Path(__file__).parent / "data/sift_groundtruth.ivecs")
+    base_vecs = fvecs_read(Path(__file__).parent / "data/siftsmall_base.fvecs")
+    query_vecs = fvecs_read(Path(__file__).parent / "data/siftsmall_query.fvecs")
+    gt_vecs = ivecs_read(Path(__file__).parent / "data/siftsmall_groundtruth.ivecs")
 
     # Construct the DB with base vectors
     vdb = VectorDB(search_dim=128, preallocate=10001)
