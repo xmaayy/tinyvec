@@ -58,4 +58,28 @@ chain = (
 )
 
 print(chain.invoke("How long should I stretch if I want to grow my muscle size?"))
+"""
+> Answer: The recommended stretching routine for growing muscle size is 3 sets of 10-12 repetitions with 30 seconds rest in between. This routine can be done 3-4 times a week.
+"""
+
+print(chain.invoke("How should I optimize stretching for range of motion?"))
+"""
+Answer: The optimal stretching technique for range of motion depends on the individual's goals and the specific muscles being targeted. Here are some general guidelines:
+
+1. Start with a warm-up: Before stretching, it's important to warm up your muscles with dynamic stretches. This will help prevent injury and improve flexibility.
+
+2. Choose the right stretch: There are many different types of stretches, each with its own benefits and drawbacks. Choose a stretch that feels comfortable and safe for you.
+
+3. Focus on the targeted muscles: Stretching the muscles that are causing pain or limiting movement can help improve range of motion.
+
+4. Avoid overstretching: Overstretching can cause injury and reduce the benefits of stretching.
+
+5. Gradually increase intensity: As you become more comfortable with a stretch, gradually increase the intensity.
+
+6. Use props: If you're struggling to reach a certain stretch, consider using props like a foam roller, resistance band, or yoga block.
+
+7. Monitor progress: Keep track of your progress and adjust your stretching routine as needed.
+
+Remember, stretching is a tool to help you improve your range of motion, not a substitute for proper warm-up and injury prevention.
+"""
 ```
