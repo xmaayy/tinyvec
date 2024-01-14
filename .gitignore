@@ -1,0 +1,6 @@
+__pycache__
+.env/*
+.env
+*.egg-info
+*.bin
+.pytest_cache
