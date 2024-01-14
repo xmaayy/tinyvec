@@ -1,10 +1,12 @@
 from .vector_db import VectorDB
-
+all_list = ['VectorDB']
 try:
     import langchain_core
     from .langchain_store import LangchainVectorDB
-    __all__ = ['VectorDB', 'LangchainVectorDB']
+    all_list.append('LangchainVectorDB')
 except ImportError:
-    __all__ = ['VectorDB']
+    pass
+
+__all__ = all_list
 
 
