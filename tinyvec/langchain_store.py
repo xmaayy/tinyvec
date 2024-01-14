@@ -161,13 +161,16 @@ class LangchainVectorDB(VectorStore):
     ) -> VST:
         """Return VectorStore initialized from texts and embeddings."""
         lcvdb = LangchainVectorDB()
+        print(f"Allocating {len(texts)} size database")
         vdb = VectorDB(search_dim=emb_dim, preallocate=len(texts))
         if individually:
-            embds = embedding.embed_query(texts)
-            inds = vdb.add(embds)
+            print("Embedding individual queries")
+            inds = [vdb.add(embedding.embed_query(text)) for text in texts]
         else:
+            print("Embedding all docs at once")
             embds = embedding.embed_documents(texts)
             inds = vdb.add_many(embds)
+        print("Done")
         lcvdb.vdb = vdb
         lcvdb.embedder = embedding
         lcvdb.texts = dict(zip(inds, texts))
