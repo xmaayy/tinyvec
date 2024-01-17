@@ -1,0 +1,37 @@
+[project]
+name = "tinyvec"
+version = "2024.1.16"
+dependencies = [
+  "numpy",
+]
+requires-python = ">=3.10"
+authors = [
+  {name = "Xander May", email = "x@whoelsebut.me"},
+]
+description = "A learning experience in vector databases"
+readme = "README.md"
+license = {text = "MIT License"}
+keywords = ["vector", "database", "embedding", "locality hashing"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+langchain = [
+  "langchain"
+]
+dev = [
+  "pytest",
+  "pytest-cov",
+  "langchain"
+]
+
+[project.urls]
+Homepage = "https://tinyvec.whoelsebut.me"
+Documentation = "https://github.com/xmaayy/tinyvec"
+Repository = "https://github.com/xmaayy/tinyvec"
+"Bug Tracker" = "https://github.com/xmaayy/tinyvec/issues"
+Changelog = "https://github.com/xmaayy/tinyvec/blob/master/CHANGELOG.md"
