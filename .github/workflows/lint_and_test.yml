@@ -1,0 +1,70 @@
+name: Linting For Python Files
+on:
+  push:
+    paths:
+      - '**.py'
+jobs:
+  Lint Python Files With Ruff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: '0'
+      - run: git fetch origin master:master
+      - uses: actions/setup-python@v4 
+        with:
+          python-version: 'pypy3.10' 
+      - name: Install the linter
+        run: pip install ruff
+      - name: For Debugging
+        run: |
+          git merge-base master HEAD | \
+            xargs -L 1 git diff --name-only | \
+            grep -E "*.py\b" | \
+            xargs -d '\n' ls -1df 2>/dev/null 
+      - name: Lint With ruff
+        run: |
+          git merge-base master HEAD | \
+            xargs -L 1 git diff --name-only | \
+            grep -E "*.py\b" | \
+            xargs -d '\n' ls -1df 2>/dev/null | \
+            xargs -L 1 ruff
+  Test Python Files With Pytest:
+    permissions: write-all
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v1
+      with:
+        python-version: "3.10"
+
+    - name: Install This Package
+      run: |
+        python -m pip install .
+
+    - name: Cache python packages
+      uses: actions/cache@v1
+      env:
+        cache-name: cache-python-packages
+      with:
+        path: ~/.cache/pip # This path is specific to Ubuntu
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements/actions.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+          ${{ runner.os }}-
+
+    - name: Test with pytest
+      run: |
+        pip install pytest
+        cd tests/ && pytest --disable-pytest-warnings --cov=../src/tinyvec --cov-report term-missing --cov-report=xml
+
+    - name: Put coverage in pull request
+      uses: 5monkeys/cobertura-action@master
+      with:
+        path: tests/coverage.xml
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        minimum_coverage: 0
+        show_class_names: true
+        show_line: true
