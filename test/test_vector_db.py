@@ -101,3 +101,16 @@ def test_swapping_bin():
         [0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ],
         [0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ]]))
     
+def test_get_k_similar_vecs():
+    vdb = VectorDB(
+        search_dim=10,
+        preallocate=10,
+        reallocation_fraction=0.5
+    )
+    assert (vdb.vec_arr.shape[0] == 10), "Initial vdb size wrong"
+    for i in range(50):
+        vdb.add([0.1*i] * 10)
+        if i == 10:
+            assert (vdb.vec_arr.shape[0] == 15), "Reallocation was wrong size"
+    _, inds = vdb.get_k_similar_vecs([0.1] * 10, 5)
+    assert len(inds) == 5, "Wrong number of results"
