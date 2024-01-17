@@ -4,7 +4,7 @@ on:
     paths:
       - '**.py'
 jobs:
-  Lint Python Files With Ruff:
+  Lint-Python-Files-With-Ruff:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -29,7 +29,7 @@ jobs:
             grep -E "*.py\b" | \
             xargs -d '\n' ls -1df 2>/dev/null | \
             xargs -L 1 ruff
-  Test Python Files With Pytest:
+  Test-Python-Files-With-Pytest:
     permissions: write-all
     runs-on: ubuntu-latest
     steps:
