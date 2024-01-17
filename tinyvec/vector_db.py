@@ -1,5 +1,4 @@
-from typing import Optional, Union, List
-from pathlib import Path
+from typing import Optional, Union, List, Tuple
 import numpy as np
 import shutil
 import math
@@ -23,26 +22,27 @@ class VectorDB(LocalizationMixin, DistanceMixin):
     """
 
     data_file_path: os.PathLike
+    """The path to the file that we are storing the vectors in."""
 
-    # The size that we actually want to store vectors as after they are ingested
-    # by the database.
     search_dim: int
+    """The size that we actually want to store vectors as after they are ingested
+    # by the database."""
 
-    # Memory mapped array of vectors stored by numpy to hold the vectors
     vec_arr: np.ndarray
+    """Memory mapped array of vectors stored by numpy to hold the vectors"""
 
-    # Space Counter | Having to pre-allocate array chunks means that we will need
-    # to keep track of how many spaces we have left to allocate. Numpy memmap arrays
-    # are initialized as 0's, so when we load a memmap array we can count backwards
-    # from the end to determine how many remaining spots there are
     end_index: int
+    """Space Counter | Having to pre-allocate array chunks means that we will need
+    to keep track of how many spaces we have left to allocate. Numpy memmap arrays
+    are initialized as 0's, so when we load a memmap array we can count backwards
+    from the end to determine how many remaining spots there are"""
 
-    # Reallocation fraction (0-1] | You can balance the unused space that gets pre-allocated
-    # with the frequency at which you need to re-allocate by tuning this parameter. If you
-    # set it very low, you will be more frequently reallocating space. If you set it
-    # high, you will less frequently allocate space but you will end up with more unused space
-    # (Set it high for short lived experiments, low for longer term data)
     reallocation_fraction: float
+    """Reallocation fraction (0-1] | You can balance the unused space that gets pre-allocated
+    with the frequency at which you need to re-allocate by tuning this parameter. If you
+    set it very low, you will be more frequently reallocating space. If you set it
+    high, you will less frequently allocate space but you will end up with more unused space
+    (Set it high for short lived experiments, low for longer term data)"""
 
     def __init__(
         self,
@@ -61,6 +61,13 @@ class VectorDB(LocalizationMixin, DistanceMixin):
         self.search_dim = search_dim
 
     def __reallocate(self, n: Optional[int] = None):
+        """Reallocate the array to be larger. This is a very expensive operation
+        because it requires copying the entire array to a new location. This is
+        why we want to pre-allocate as much space as we can to avoid this operation
+
+        Args:
+            n (Optional[int], optional): New vectors needed. Defaults to None.
+        """
         new_size = self.vec_arr.shape[0] + math.ceil(
             self.vec_arr.shape[0] * self.reallocation_fraction
         )
@@ -148,7 +155,21 @@ class VectorDB(LocalizationMixin, DistanceMixin):
         k: int = 5,
         metric: str = "euclidean_dist_square",
         localization: str = "brute_force",
-    ):
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Get the k most similar vectors to the given vector
+
+        Args:
+            vector (VecLike): The vector to compare against
+            k (int, optional): Number of vectors to return. Defaults to 5.
+            metric (str, optional): Distance metric to use. Defaults to "euclidean_dist_square".
+            localization (str, optional): Localization method to use. Defaults to "brute_force".
+
+        Raises:
+            NotImplementedError: If the metric or localization method is not implemented
+
+        Returns:
+            Tuple[np.ndarray, np.ndarray]:
+        """
         locale = self._get_group(vector, localization)
         if hasattr(self, metric):
             scoring_fn = getattr(self, metric)
