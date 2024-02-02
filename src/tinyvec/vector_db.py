@@ -1,16 +1,21 @@
 from typing import Optional, Union, List, Tuple
+from multiprocessing import Pool, cpu_count
+from pathlib import Path
 import numpy as np
 import shutil
 import math
 import os
 
-from .localization import LocalizationMixin
+from tqdm import tqdm
+
 from .distance import DistanceMixin
 
 VecLike = Union[np.ndarray, List[float]]
 
+CPU_COUNT = cpu_count()
 
-class VectorDB(LocalizationMixin, DistanceMixin):
+
+class VectorDB(DistanceMixin):
     """
     An on-disk implementation of a vector database. As with anything made in the
     spirit of learning there are tradeoffs, and this specific implementations
@@ -51,14 +56,46 @@ class VectorDB(LocalizationMixin, DistanceMixin):
         preallocate: int = 1000,
         reallocation_fraction: float = 0.50,
     ):
-        self.data_file_path = data_file_path
+        self.data_file_path = Path(data_file_path)
+        if self.data_file_path.exists():
+            mode = "r+"
+            sz = self.data_file_path.stat().st_size
+            rows = int(sz / (search_dim * np.dtype(np.float32).itemsize))
+        else:
+            mode = "w+"
+            rows = preallocate
+
         self.vec_arr: np.ndarray = np.memmap(
-            data_file_path, dtype="float32", mode="w+", shape=(preallocate, search_dim)
+            data_file_path, dtype="float32", mode=mode, shape=(rows, search_dim)
         )
 
         self.reallocation_fraction = reallocation_fraction
-        self.end_index = 0
+        if mode == "w+":
+            self.end_index = 0
+        else:
+            self.__find_arr_end()
         self.search_dim = search_dim
+
+    def __find_arr_end(self,):
+        """Find the end of the array with binary search"""
+        vl = int(self.vec_arr.shape[0] / 2)
+        ind = vl
+        while True:
+            vl = max(int(vl/2), 1)
+            cs = sum(self.vec_arr[ind, :])
+            if cs == 0:
+                # If we're in an unpopulated section, move the
+                # pointer back
+                n_ind = ind - vl
+            else:
+                # If we're in a populated section, move
+                # the array pointer forward
+                n_ind = ind + vl
+            if vl == 1 and (cs == 0 or sum(self.vec_arr[n_ind, :]) == 0):
+                self.end_index = ind if cs else n_ind
+                break
+            else:
+                ind = n_ind
 
     def __reallocate(self, n: Optional[int] = None):
         """Reallocate the array to be larger. This is a very expensive operation
@@ -81,7 +118,7 @@ class VectorDB(LocalizationMixin, DistanceMixin):
         new_array: np.ndarray = np.memmap(
             temp_path,
             dtype="float32",
-            mode="w+",
+            mode="r+",
             shape=(new_size, self.vec_arr.shape[1]),
         )
         # TODO: Maybe make the chunk size configurable in the future to
@@ -119,6 +156,7 @@ class VectorDB(LocalizationMixin, DistanceMixin):
         if self.end_index >= self.vec_arr.shape[0]:
             self.__reallocate()
         self.vec_arr[self.end_index, :] = vector
+        self.vec_arr.flush()
         self.end_index += 1
         # Return the index of the added string
         return self.end_index - 1
@@ -145,7 +183,7 @@ class VectorDB(LocalizationMixin, DistanceMixin):
             localization_method = getattr(self, method)
         else:
             raise NotImplementedError(f"No localization method | {method}")
-        locale: np.ndarray = localization_method(vector, self.vec_arr)
+        locale: np.ndarray = localization_method(vector, self.vec_arr[::])
 
         return locale
 
@@ -155,6 +193,7 @@ class VectorDB(LocalizationMixin, DistanceMixin):
         k: int = 5,
         metric: str = "euclidean_dist_square",
         localization: str = "brute_force",
+        multiproc: bool = False,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Get the k most similar vectors to the given vector
 
@@ -170,31 +209,36 @@ class VectorDB(LocalizationMixin, DistanceMixin):
         Returns:
             Tuple[np.ndarray, np.ndarray]:
         """
-        locale = self._get_group(vector, localization)
-        if hasattr(self, metric):
-            scoring_fn = getattr(self, metric)
+        if multiproc:
+            chunk_sz = int(self.end_index / CPU_COUNT)
+            chunk_inds = [
+                (i * chunk_sz, min((i + 1) * chunk_sz, self.end_index))
+                for i in range(CPU_COUNT)
+            ]
+            # Create the array of arguments that we'll pass into the
+            # scoring function
+            scoring_args = list(
+                zip(
+                    [vector] * CPU_COUNT,
+                    chunk_inds,
+                    [self.search_dim] * CPU_COUNT,
+                    [self.data_file_path] * CPU_COUNT,
+                )
+            )
+            with Pool(CPU_COUNT) as p:
+                scores = p.starmap(self._calculate_scores_multi, scoring_args)
+            scores = np.array(scores).reshape(-1)
         else:
-            raise NotImplementedError(f"No similarity metric | {metric}")
-        scores = [scoring_fn(vector, dbvec) for idx, dbvec in enumerate(locale[::])]
+            scores = self._calculate_scores_multi(
+                vector, (0, self.end_index), self.search_dim, self.data_file_path
+            )
         sim_vec = np.argpartition(scores, k)[:k]
         # Returned in no particular order
-        return locale[sim_vec, :], sim_vec
+        return self.vec_arr[sim_vec, :], sim_vec
 
-    @staticmethod
-    def _pca(dset, topk):
-        """
-        Numpy only PCA for dimensionality reduction
-        """
-        means = np.mean(dset, axis=0)
-        stddevs = np.std(dset, axis=0, ddof=1)
-        stdset = (dset - means) / stddevs
-        # Next we need to calculate the covariance matrix
-        covmat = np.dot(stdset.T, stdset) / (4 / 0.8)
-        # Get eigen vals/vecs
-        evals, evecs = np.linalg.eig(covmat)
-        # Choose top-k PCS based on eigenvals
-        # argpartition is linear time worst case
-        pt = np.argpartition(evals, -topk)[-topk:]
-        # Dot the eigen vec and the feature vec together
-        # to get the principal component vectors
-        return np.dot(stdset, evecs[:, pt])
+    def get_size(self,):
+        return self.end_index
+
+    @property
+    def size(self,):
+        return self.get_size()
