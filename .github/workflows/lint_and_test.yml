@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: '0'
-      - run: git fetch origin master:master
+      - run: git fetch origin main:main
       - uses: actions/setup-python@v4 
         with:
           python-version: 'pypy3.10' 
@@ -18,13 +18,13 @@ jobs:
         run: pip install ruff
       - name: For Debugging
         run: |
-          git merge-base master HEAD | \
+          git merge-base main HEAD | \
             xargs -L 1 git diff --name-only | \
             grep -E "*.py\b" | \
             xargs -d '\n' ls -1df 2>/dev/null 
       - name: Lint With ruff
         run: |
-          git merge-base master HEAD | \
+          git merge-base main HEAD | \
             xargs -L 1 git diff --name-only | \
             grep -E "*.py\b" | \
             xargs -d '\n' ls -1df 2>/dev/null | \
