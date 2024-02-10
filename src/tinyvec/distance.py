@@ -9,12 +9,13 @@ class DistanceMixin:
 
     @staticmethod
     def euclidean_dist(x: np.ndarray, y: np.ndarray):
-        diff = x - y
+        diff = np.array(x) - np.array(y)
         return np.sqrt(np.dot(diff, diff))
 
     @staticmethod
     def euclidean_dist_square(x: np.ndarray, y: np.ndarray):
-        diff = x - y
+        diff = np.array(x) - np.array(y)
+        import ipdb; ipdb.set_trace()
         return np.dot(diff, diff)
 
     @staticmethod

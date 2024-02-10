@@ -2,115 +2,45 @@ import numpy as np
 
 from tinyvec import VectorDB
 
+import numpy as np
+import pytest
 
-def test_pca():
-    dset = [
-        [1,2,3,4],
-        [5,5,6,7],
-        [1,4,2,3],
-        [5,3,2,1],
-        [8,1,2,2]
-    ] 
-    final = np.array(
-        [[ 7.55974765e-01,  1.40033078e-02],
-         [-7.80431775e-01, -2.55653399e+00],
-         [ 1.25313470e+00, -5.14801919e-02],
-         [ 2.38808310e-04,  1.01415002e+00],
-         [-1.22891650e+00,  1.57986086e+00]]
-    )
-    pca = VectorDB._pca(dset, 2)
-    assert np.allclose(pca, final)
+from tinyvec import VectorDB
 
-def test_add_many():
-    vdb = VectorDB(
-        search_dim=20,
-        preallocate=10,
-        reallocation_fraction=0.5
-    )
-    assert (vdb.vec_arr.shape[0] == 10), "Initial vdb size wrong"
-    new_vecs = np.ones((50,20))
-    indices = vdb.add_many(new_vecs)
-    # TODO this is over allocating right now
-    assert vdb.vec_arr.shape[0] == 80
-    assert np.array_equal(indices, np.array(range(0,50)))
+@pytest.fixture
+def file_path(tmp_path):
+    return tmp_path / "test_data.bin"
 
-def test_swapping_bin():
-    vdb = VectorDB(
-        search_dim=10,
-        preallocate=10,
-        reallocation_fraction=0.5
-    )
-    assert (vdb.vec_arr.shape[0] == 10), "Initial vdb size wrong"
-    for i in range(50):
-        vdb.add([0.1*i] * 10)
-        if i == 10:
-            assert (vdb.vec_arr.shape[0] == 15), "Reallocation was wrong size"
+@pytest.fixture
+def vdb_instance(file_path):
+    return VectorDB(str(file_path), search_dim=4)
 
-    assert np.allclose(vdb.vec_arr, np.array(
-        [[0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ],
-        [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
-        [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
-        [0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3],
-        [0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4],
-        [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-        [0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6, 0.6],
-        [0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7, 0.7],
-        [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8, 0.8],
-        [0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9],
-        [1. , 1. , 1. , 1. , 1. , 1. , 1. , 1. , 1. , 1. ],
-        [1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1, 1.1],
-        [1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2, 1.2],
-        [1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3],
-        [1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4, 1.4],
-        [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5],
-        [1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6, 1.6],
-        [1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7, 1.7],
-        [1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8, 1.8],
-        [1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9, 1.9],
-        [2. , 2. , 2. , 2. , 2. , 2. , 2. , 2. , 2. , 2. ],
-        [2.1, 2.1, 2.1, 2.1, 2.1, 2.1, 2.1, 2.1, 2.1, 2.1],
-        [2.2, 2.2, 2.2, 2.2, 2.2, 2.2, 2.2, 2.2, 2.2, 2.2],
-        [2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3, 2.3],
-        [2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4, 2.4],
-        [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
-        [2.6, 2.6, 2.6, 2.6, 2.6, 2.6, 2.6, 2.6, 2.6, 2.6],
-        [2.7, 2.7, 2.7, 2.7, 2.7, 2.7, 2.7, 2.7, 2.7, 2.7],
-        [2.8, 2.8, 2.8, 2.8, 2.8, 2.8, 2.8, 2.8, 2.8, 2.8],
-        [2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9, 2.9],
-        [3. , 3. , 3. , 3. , 3. , 3. , 3. , 3. , 3. , 3. ],
-        [3.1, 3.1, 3.1, 3.1, 3.1, 3.1, 3.1, 3.1, 3.1, 3.1],
-        [3.2, 3.2, 3.2, 3.2, 3.2, 3.2, 3.2, 3.2, 3.2, 3.2],
-        [3.3, 3.3, 3.3, 3.3, 3.3, 3.3, 3.3, 3.3, 3.3, 3.3],
-        [3.4, 3.4, 3.4, 3.4, 3.4, 3.4, 3.4, 3.4, 3.4, 3.4],
-        [3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5, 3.5],
-        [3.6, 3.6, 3.6, 3.6, 3.6, 3.6, 3.6, 3.6, 3.6, 3.6],
-        [3.7, 3.7, 3.7, 3.7, 3.7, 3.7, 3.7, 3.7, 3.7, 3.7],
-        [3.8, 3.8, 3.8, 3.8, 3.8, 3.8, 3.8, 3.8, 3.8, 3.8],
-        [3.9, 3.9, 3.9, 3.9, 3.9, 3.9, 3.9, 3.9, 3.9, 3.9],
-        [4. , 4. , 4. , 4. , 4. , 4. , 4. , 4. , 4. , 4. ],
-        [4.1, 4.1, 4.1, 4.1, 4.1, 4.1, 4.1, 4.1, 4.1, 4.1],
-        [4.2, 4.2, 4.2, 4.2, 4.2, 4.2, 4.2, 4.2, 4.2, 4.2],
-        [4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3, 4.3],
-        [4.4, 4.4, 4.4, 4.4, 4.4, 4.4, 4.4, 4.4, 4.4, 4.4],
-        [4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5, 4.5],
-        [4.6, 4.6, 4.6, 4.6, 4.6, 4.6, 4.6, 4.6, 4.6, 4.6],
-        [4.7, 4.7, 4.7, 4.7, 4.7, 4.7, 4.7, 4.7, 4.7, 4.7],
-        [4.8, 4.8, 4.8, 4.8, 4.8, 4.8, 4.8, 4.8, 4.8, 4.8],
-        [4.9, 4.9, 4.9, 4.9, 4.9, 4.9, 4.9, 4.9, 4.9, 4.9],
-        [0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ],
-        [0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ],
-        [0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. , 0. ]]))
-    
-def test_get_k_similar_vecs():
-    vdb = VectorDB(
-        search_dim=10,
-        preallocate=10,
-        reallocation_fraction=0.5
-    )
-    assert (vdb.vec_arr.shape[0] == 10), "Initial vdb size wrong"
-    for i in range(50):
-        vdb.add([0.1*i] * 10)
-        if i == 10:
-            assert (vdb.vec_arr.shape[0] == 15), "Reallocation was wrong size"
-    _, inds = vdb.get_k_similar_vecs([0.1] * 10, 5)
-    assert len(inds) == 5, "Wrong number of results"
+
+# Test the add method
+def test_add(vdb_instance):
+    vector = [1.0, 2.0, 3.0, 4.0]
+    index = vdb_instance.add(vector)
+    assert index == 0  # First vector should have index 0
+
+# Test adding multiple vectors
+def test_add_many(vdb_instance):
+    vectors = [[1.0, 2.0, 3.0, 4.0], [5.0, 6.0, 7.0, 8.0]]
+    indices = vdb_instance.add_many(vectors)
+    assert indices == [0, 1]  # Indices should be [0, 1] for the added vectors
+
+# Test deleting a vector
+def test_delete(vdb_instance):
+    vectors = [[1.0, 2.0, 3.0, 4.0], [5.0, 6.0, 7.0, 8.0]]
+    indices = vdb_instance.add_many(vectors)
+    moved_row, new_loc = vdb_instance.delete(0)
+    assert moved_row == 1
+    assert new_loc == 0
+
+# Test getting k similar vectors
+def test_get_k_similar_vecs(vdb_instance):
+    vectors = [[1.0, 2.0, 3.0, 4.0], [5.0, 6.0, 7.0, 8.0], [9.0, 10.0, 11.0, 12.0]]
+    vdb_instance.add_many(vectors)
+    query_vector = [1.0, 2.0, 3.0, 4.0]
+    k = 2
+    similar_indices = vdb_instance.get_k_similar_vecs(query_vector, k)
+    assert set(similar_indices) == set([0, 1])  # Indices of the most similar vectors should be [0, 1]

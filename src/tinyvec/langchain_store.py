@@ -28,7 +28,7 @@ class LangchainVectorDB(VectorStore):
     """The default number of similar examples to return when querying for documents"""
 
     debug_logger: Callable
-    """How to log debug messages by defualt"""
+    """How to log debug messages by default"""
 
     def __init__(
         self,
@@ -39,7 +39,7 @@ class LangchainVectorDB(VectorStore):
         debug_logger: Callable = lambda _: None,
         **kwargs,
     ) -> "LangchainVectorDB":
-        super(**kwargs)
+        super().__init__(**kwargs)  # Fixed to call super().__init__ with kwargs
         self.vdb = vdb
         self.embedder = embedder
         self.texts = texts
@@ -48,36 +48,55 @@ class LangchainVectorDB(VectorStore):
 
     @classmethod
     def from_texts(
-        cls: "LangchainVectorDB",
+        cls,
         texts: List[str],
-        embedding: Embeddings,
-        metadatas: Optional[List[dict]] = None,
+        embedder: Embeddings,
         emb_dim: int = None,
         individually: bool = False,
         default_k: int = 4,
         debug_logger: Callable = lambda x: None,
-        **kwargs: Any,
-    ) -> VST:
+        **kwargs,
+    ):
         """Return VectorStore initialized from texts and embeddings."""
-        debug_logger(f"Allocating {len(texts)} size database")
-        vdb = VectorDB(search_dim=emb_dim, preallocate=len(texts))
+        vdb = VectorDB(search_dim=emb_dim)
+        inds = []
         if individually:
-            inds = []
             debug_logger("Embedding individual queries")
             for query in texts:
                 s = time()
-                embds = embedding.embed_query(query)
+                embd = embedder.embed_query(query)
                 debug_logger(f"Time to embed {time() - s}")
-                inds.append(vdb.add(embds))
+                ind = vdb.add(embd)  # Updated to use the return value of add
+                inds.append(ind)
         else:
             debug_logger("Embedding all docs at once")
-            embds = embedding.embed_documents(texts)
-            inds = vdb.add_many(embds)
+            embds = embedder.embed_documents(texts)
+            inds = vdb.add_many(embds)  # Updated to use the return value of add_many
         debug_logger("Done")
-        lcvdb = LangchainVectorDB(
-            vdb, embedding, dict(zip(inds, texts)), default_k, debug_logger
+        lcvdb = cls(
+            vdb, embedder, dict(zip(inds, texts)), default_k, debug_logger, **kwargs
         )
         return lcvdb
+
+    def add_texts(
+        self,
+        texts: Iterable[str],
+        **kwargs,
+    ) -> List[int]:
+        """Embed and add texts to the VectorDB, returning their indices."""
+        embedded_data = self.embedder.embed_documents(texts)
+        indices = self.vdb.add_many(embedded_data)  # Use add_many's returned indices
+        new_elements = dict(zip(indices, texts))
+        self.texts.update(new_elements)  # Use update for merging dictionaries
+        return indices
+
+    def delete(self, ids: List[int], **kwargs) -> None:
+        """Delete vectors by their indices."""
+        for id in ids:
+            moved_index, new_location = self.vdb.delete_row(id)
+            # Handle updates to self.texts if necessary, considering moved vectors
+            if moved_index is not None:
+                self.texts[new_location] = self.texts.pop(moved_index)
 
     @classmethod
     def from_documents(
@@ -85,24 +104,10 @@ class LangchainVectorDB(VectorStore):
     ) -> VST:
         return cls.from_texts([d.content for d in documents], embedding, kwargs)
 
-    def add_texts(
-        self,
-        texts: Iterable[str],
-        **kwargs: Any,
-    ) -> List[str]:
-        embedded_data = self.embeddings.embed_documents(texts)
-        indices = self.add_many(embedded_data)
-        new_elements = dict(zip(indices, texts))
-        self.texts = {**self.texts, **new_elements}
-        return indices
-
     @property
     def embeddings(self) -> Optional[Embeddings]:
         """Access the query embedding object if available."""
         return None if not hasattr(self, "embedder") else self.embedder
-
-    def delete(self, ids: List[str] = None, **kwargs: Any) -> bool:
-        self.vdb.remove_many(ids)
 
     async def adelete(
         self, ids: Optional[List[str]] = None, **kwargs: Any

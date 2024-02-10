@@ -11,10 +11,14 @@ An implemetation of a vector database whose purpose is not to serve you as fast 
 
 ## Features
 ### On Disk Vector Storage
-Will this beat some fully hosted blazingly fast tensor library? Not likely. But when looking to do RAG on a set of documents I found that either II needed to set up some behemoth database, or I needed to have >60GB of memory (and occasionally both). I decided to see if it was possible to create something that was more aligned with the average user having a lot more disk space than available memory.
+Will this beat some fully hosted blazingly fast tensor library? Not likely. But when looking to do RAG on a set of documents I found that either I needed to set up some behemoth database, or I needed to have >60GB of memory (and occasionally both). I decided to see if it was possible to create something that was more aligned with the average user having a lot more disk space than available memory. 
+
+The amount of memory used is entirely dependant on the size of the chunks that you choose to load when fetching the k-most-similar vectors to your query vector. If you choose a large chunk you will be less IO bound, but will use more memory. Whereas using a small chunk size will limit your memory consumption, but will pretty quickly increase the number of queries you need to make to your much slower disk.
+
+For the 128-dim embeddings I was using to test, a chunk size of 1000 was about 40MB in memory.
 
 ### LangChain compatability
-This project was originally formed because I wanted to run a lot of medical papers through TinyLlama on CoLab. They only give you 12GB of memory, but about 100GB of disk which I'm willing to bet is an SSD. So I spent god knows how many $ in time to create this thing that will save me from buying 50$ worth of additional memory for my home machine.
+This project was originally formed because I wanted to run a lot of medical papers through TinyLlama on CoLab. They only give you 12GB of memory, but about 100GB of disk which I'm willing to bet is an SSD. So I spent god knows how many dollars in time to create this thing that will save me from buying 50\$ worth of additional memory for my home machine.
 
 ```python
 from langchain_core.output_parsers import StrOutputParser
