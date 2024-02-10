@@ -24,6 +24,15 @@ class Array2DFileHandler:
 
 
     def __init__(self, filepath: str, rows: int = 0, cols: int = 0, precision: str = 'single'):
+        """
+        Initialize the Array2DFileHandler object.
+
+        Args:
+            filepath (str): Path to the file.
+            rows (int, optional): Number of rows in the array. Defaults to 0.
+            cols (int, optional): Number of columns in the array. Defaults to 0.
+            precision (str, optional): Precision of the floating point values: 'single' or 'double'. Defaults to 'single'.
+        """
         self.filepath = filepath
         self.rows = rows
         self.cols = cols
@@ -35,6 +44,9 @@ class Array2DFileHandler:
         self._init_or_read_header()
 
     def _init_or_read_header(self):
+        """
+        Initialize or read the file header.
+        """
         try:
             with open(self.filepath, 'r+b') as file:
                 self._parse_header(file)
@@ -42,11 +54,23 @@ class Array2DFileHandler:
             self._create_file()
 
     def _create_file(self):
+        """
+        Create a new file and write the header.
+        """
         flags = 0b01 if self.precision == 'double' else 0b00  # Set precision flag, leaving lock bit as 0
         with open(self.filepath, 'wb') as file:
             file.write(struct.pack(self.header_fmt, self.rows, self.cols, flags))
 
     def _parse_header(self, file):
+        """
+        Parse the header of the file.
+
+        Args:
+            file: The file object.
+
+        Raises:
+            Exception: If the file is currently locked for writing.
+        """
         file.seek(0)
         self.rows, self.cols, flags = struct.unpack(self.header_fmt, file.read(HEADER_SZ))
         self.precision = 'double' if flags & 0b01 else 'single'
@@ -56,7 +80,13 @@ class Array2DFileHandler:
             raise Exception("File is currently locked for writing.")
 
     def _set_lock(self, file, lock: bool):
-        # Assume file is an open file object with 'r+b' mode
+        """
+        Set or clear the write lock flag in the file header.
+
+        Args:
+            file: The file object.
+            lock (bool): True to set the lock flag, False to clear it.
+        """
         file.seek(8)  # Seek directly to the flags part of the header
         flags, = struct.unpack('i', file.read(4))
         if lock:
@@ -70,13 +100,23 @@ class Array2DFileHandler:
 
     @classmethod
     def from_file(cls, filepath: str):
+        """
+        Create an Array2DFileHandler object from an existing file.
+
+        Args:
+            filepath (str): Path to the file.
+
+        Returns:
+            Array2DFileHandler: The Array2DFileHandler object.
+        """
         with open(filepath, 'rb') as file:
             rows, cols, precision_flag = struct.unpack('3i', file.read(HEADER_SZ))
             precision = 'single' if precision_flag == 0 else 'double'
             return cls(filepath, rows, cols, precision)
 
     def read(self) -> np.ndarray:
-        """Read the entire dataset into a NumPy array.
+        """
+        Read the entire dataset into a NumPy array.
 
         Returns:
             np.ndarray: The dataset as a NumPy array with shape (rows, cols).
@@ -103,6 +143,15 @@ class Array2DFileHandler:
 
 
     def seek_row(self, row_number: int) -> list[float]:
+        """
+        Seek to a specific row in the file and return its data.
+
+        Args:
+            row_number (int): The index of the row to seek.
+
+        Returns:
+            list[float]: The data of the specified row.
+        """
         with open(self.filepath, 'rb') as file:
             self._parse_header(file)  # Ensure no write lock is active and update attributes
             offset = HEADER_SZ + self.float_size * self.cols * row_number
@@ -112,7 +161,8 @@ class Array2DFileHandler:
 
 
     def load_batch(self, start_row: int, end_row: int) -> np.ndarray:
-        """Load a batch of rows from the file directly into a NumPy array.
+        """
+        Load a batch of rows from the file directly into a NumPy array.
 
         Args:
             start_row (int): The starting row index of the batch.
@@ -145,6 +195,12 @@ class Array2DFileHandler:
 
         
     def write(self, data: list[list[float]]):
+        """
+        Write data to the file.
+
+        Args:
+            data (list[list[float]]): The data to write.
+        """
         with open(self.filepath, 'r+b') as file:
             self._parse_header(file)  # Ensures we have the latest file info and no write is currently happening
             # Set the write lock with the current file object
@@ -169,6 +225,13 @@ class Array2DFileHandler:
 
 
     def write_row(self, row_data: list[float], row_number: Optional[int] = None):
+        """
+        Write a row of data to the file.
+
+        Args:
+            row_data (list[float]): The data of the row to write.
+            row_number (int, optional): The index of the row to write. If None, the row will be appended to the file. Defaults to None.
+        """
         with open(self.filepath, 'r+b') as file:
             self._parse_header(file)  # Read and update attributes to ensure consistency
             
