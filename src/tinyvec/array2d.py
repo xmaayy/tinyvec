@@ -1,6 +1,6 @@
 import struct
 import ctypes
-from typing import Tuple
+from typing import Tuple, Optional
         
 import numpy as np
 
@@ -168,7 +168,7 @@ class Array2DFileHandler:
                 self._set_lock(file, False)
 
 
-    def write_row(self, row_data: list[float], row_number: int = None):
+    def write_row(self, row_data: list[float], row_number: Optional[int] = None):
         with open(self.filepath, 'r+b') as file:
             self._parse_header(file)  # Read and update attributes to ensure consistency
             

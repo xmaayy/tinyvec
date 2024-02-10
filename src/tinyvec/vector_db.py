@@ -2,11 +2,9 @@ from typing import List, Tuple
 
 import numpy as np
 
-
 from .array2d import Array2DFileHandler
-from .distance import DistanceMixin
 
-class VectorDB(DistanceMixin):
+class VectorDB():
     file_handler: Array2DFileHandler
     """File handler for the vector data file"""
 

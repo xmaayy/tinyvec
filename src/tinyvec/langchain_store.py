@@ -38,7 +38,7 @@ class LangchainVectorDB(VectorStore):
         default_k: int = 4,
         debug_logger: Callable = lambda _: None,
         **kwargs,
-    ) -> "LangchainVectorDB":
+    ):
         super().__init__(**kwargs)  # Fixed to call super().__init__ with kwargs
         self.vdb = vdb
         self.embedder = embedder
@@ -51,7 +51,7 @@ class LangchainVectorDB(VectorStore):
         cls,
         texts: List[str],
         embedder: Embeddings,
-        emb_dim: int = None,
+        emb_dim: int,
         individually: bool = False,
         default_k: int = 4,
         debug_logger: Callable = lambda x: None,
@@ -93,7 +93,7 @@ class LangchainVectorDB(VectorStore):
     def delete(self, ids: List[int], **kwargs) -> None:
         """Delete vectors by their indices."""
         for id in ids:
-            moved_index, new_location = self.vdb.delete_row(id)
+            moved_index, new_location = self.vdb.delete(id)
             # Handle updates to self.texts if necessary, considering moved vectors
             if moved_index is not None:
                 self.texts[new_location] = self.texts.pop(moved_index)
@@ -119,8 +119,8 @@ class LangchainVectorDB(VectorStore):
     ) -> List[Document]:
         """Return docs most similar to query."""
         vector = self.embedder.embed_query(query)
-        _, inds = self.vdb.get_k_similar_vecs(
-            vector, k, "euclidean_dist_square", "brute_force"
+        inds = self.vdb.get_k_similar_vecs(
+            vector, k, batch_size=10000
         )
         return [self.texts[i] for i in inds]
 
