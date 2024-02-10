@@ -1,13 +1,9 @@
-from typing import Optional, Union, List, Tuple
-import shutil
-import math
-import os
+from typing import List, Tuple
 
 import numpy as np
 
 
 from .array2d import Array2DFileHandler
-from .localization import LocalizationMixin
 from .distance import DistanceMixin
 
 class VectorDB(DistanceMixin):
