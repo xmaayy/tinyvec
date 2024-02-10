@@ -13,6 +13,13 @@ class VectorDB():
         data_file_path: str = "VecDB.bin", 
         search_dim: int = 64, 
     ):
+        """
+        Initialize a VectorDB object.
+
+        Args:
+            data_file_path (str, optional): Path to the vector data file. Defaults to "VecDB.bin".
+            search_dim (int, optional): Dimension of the vectors. Defaults to 64.
+        """
         self.data_file_path = data_file_path
         self.search_dim = search_dim
         
@@ -20,6 +27,18 @@ class VectorDB():
         self.file_handler = Array2DFileHandler(data_file_path, 0, search_dim, 'single')
     
     def add(self, vector: list[float]) -> int:
+        """
+        Add a vector to the database.
+
+        Args:
+            vector (list[float]): The vector to be added.
+
+        Returns:
+            int: The index of the newly added vector.
+        
+        Raises:
+            ValueError: If the size of the vector does not match the search dimension.
+        """
         if len(vector) != self.search_dim:
             raise ValueError("Vector size does not match search dimension.")
         
@@ -30,6 +49,18 @@ class VectorDB():
         return new_index
     
     def add_many(self, vectors: list[list[float]]) -> list[int]:
+        """
+        Add multiple vectors to the database.
+
+        Args:
+            vectors (list[list[float]]): The list of vectors to be added.
+
+        Returns:
+            list[int]: The indices of the newly added vectors.
+        
+        Raises:
+            ValueError: If any vector in the list does not match the search dimension.
+        """
         if any(len(vector) != self.search_dim for vector in vectors):
             raise ValueError("One or more vectors do not match the search dimension.")
         
@@ -43,6 +74,18 @@ class VectorDB():
         return indices
 
     def delete(self, index: int) -> Tuple[int, int]:
+        """
+        Delete a vector from the database.
+
+        Args:
+            index (int): The index of the vector to be deleted.
+
+        Returns:
+            Tuple[int, int]: A tuple containing the index of the deleted vector and the number of remaining vectors.
+        
+        Raises:
+            ValueError: If the index is out of range.
+        """
         if index < 0 or index >= self.file_handler.rows:
             raise ValueError("Index out of range.")
         return self.file_handler.delete_row(index)
@@ -53,12 +96,12 @@ class VectorDB():
         k: int = 5,
         batch_size: int = 100  # Define a suitable batch size for your environment
     ) -> List[int]:
-        """Get the indices of the k most similar vectors to the given vector, utilizing batch processing.
+        """
+        Get the indices of the k most similar vectors to the given vector, utilizing batch processing.
 
         Args:
             vector (List[float]): The vector to compare against.
             k (int, optional): Number of vector indices to return. Defaults to 5.
-            metric (str, optional): Distance metric to use. Defaults to "euclidean_dist_square".
             batch_size (int, optional): The number of vectors to process in each batch.
 
         Raises:

@@ -1,6 +1,6 @@
 [project]
 name = "tinyvec"
-version = "2024.1.16"
+version = "2024.2.10"
 dependencies = [
   "numpy",
 ]

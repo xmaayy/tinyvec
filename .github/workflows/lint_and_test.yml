@@ -16,19 +16,8 @@ jobs:
           python-version: 'pypy3.10' 
       - name: Install the linter
         run: pip install ruff
-      - name: For Debugging
-        run: |
-          git merge-base main HEAD | \
-            xargs -L 1 git diff --name-only | \
-            grep -E "*.py\b" | \
-            xargs -d '\n' ls -1df 2>/dev/null 
       - name: Lint With ruff
-        run: |
-          git merge-base main HEAD | \
-            xargs -L 1 git diff --name-only | \
-            grep -E "*.py\b" | \
-            xargs -d '\n' ls -1df 2>/dev/null | \
-            xargs -L 1 ruff
+        run: ruff src/ 
   Test-Python-Files-With-Pytest:
     permissions: write-all
     runs-on: ubuntu-latest
@@ -57,7 +46,7 @@ jobs:
 
     - name: Test with pytest
       run: |
-        pip install pytest
+        pip install pytest pytest-cov
         cd tests/ && pytest --disable-pytest-warnings --cov=../src/tinyvec --cov-report term-missing --cov-report=xml
 
     - name: Put coverage in pull request
